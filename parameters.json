@@ -1,26 +1,27 @@
 {
-    "num_epochs": 20,
-    "batch_size": 16,
-    "num_filters": 32,
-    "filter_sizes": "3,4,5",
-    "embedding_dim": 64,
+    "num_epochs": 5,
+    "batch_size": 64,
+    "dev_batch_size": 16384,
+    "num_filters": 256,
+    "filter_sizes": "3,4,5,7,11",
+    "embedding_dim": 128,
     "l2_reg_lambda": 0.0,
-    "evaluate_every": 200,
+    "evaluate_every": 1000,
     "dropout_keep_prob": 0.5,
 
 
     "max_document_length": 22,
     "learning_rate": 1e-3,
     "val_set_ratio": 0.1,
-    "alphabet": "abcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{}",
+    "alphabet": "abcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{} ",
     "char_seq_len" : 110,
 
-    "train_file" : "/Users/cyadav/chirag-aws/tde/data/cat_cnn/12-09/all_tagged_categories_train_cleaned.csv",
-    "cat_file" : "/Users/cyadav/chirag-aws/tde/data/categories_42.txt",
+    "train_file" : "/home/ubuntu/tde/data/cat_cnn/12-09/all_tagged_categories_train_cleaned.csv",
+    "cat_file" : "/home/ubuntu/tde/data/categories_42.txt",
     "test_set_dir" : "data/test",
     "create_test": false,
     "dev_set_dir" : "data/test",
-    "output_dir" : "char_cnn_us",
+    "output_dir" : "char_cnn_256_345711_128",
     "desc_col" : "cleaned_description_lc",
     "log_file" : "logs/log"
 }

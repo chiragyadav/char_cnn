@@ -6,7 +6,7 @@ import logging
 import data_utils
 import numpy as np
 import tensorflow as tf
-from model import CharCNN
+from model import TextCNN
 from sklearn.model_selection import train_test_split
 
 # load parameter file
@@ -90,9 +90,14 @@ def train_cnn():
         session_conf = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
         sess = tf.Session(config=session_conf)
         with sess.as_default():
-            cnn = CharCNN(num_classes=y_train.shape[1], filter_widths=(7, 7, 3, 3, 3, 3),
-                          num_filters_per_layer=(100, 200, 300, 400, 500, 600), l2_reg_lambda=0.0,
-                          seq_max_length=110, char_voc_size=70)
+            cnn = TextCNN(
+                sequence_length=x_train.shape[1],
+                num_classes=y_train.shape[1],
+                vocab_size=len(params["alphabet"]) + 1,
+                embedding_size=params['embedding_dim'],
+                filter_sizes=list(map(int, params['filter_sizes'].split(","))),
+                num_filters=params['num_filters'],
+                l2_reg_lambda=params['l2_reg_lambda'])
 
             global_step = tf.Variable(0, name="global_step", trainable=False)
             optimizer = tf.train.AdamOptimizer(params['learning_rate'])
@@ -116,6 +121,12 @@ def train_cnn():
             timestamp = time.strftime("%m%d-%H%M")
             output_dir = params['output_dir']
             out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", output_dir, timestamp))
+
+            if not os.path.exists(out_dir):
+                os.makedirs(out_dir)
+
+            with open(out_dir + 'parameters.json','w') as f:
+                json.dump(params,f)
 
             # Train Summaries
             train_summary_op = tf.summary.merge([loss_summary, acc_summary, grad_summaries_merged])
@@ -150,13 +161,15 @@ def train_cnn():
                 feed_dict = {cnn.input_x: x_batch, cnn.input_y: y_batch, cnn.dropout_keep_prob: 1.0}
                 step, summaries, loss, acc, num_correct = sess.run(
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy, cnn.num_correct], feed_dict)
-                time_str = datetime.datetime.now().isoformat()
-                logger.info("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, acc))
+                # time_str = datetime.datetime.now().isoformat()
+                # logger.info("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, acc))
                 # if writer:
                 #    writer.add_summary(summaries, step)
                 dev_summary_writer.add_summary(summaries, step)
 
                 return num_correct
+
+            sess.run(tf.global_variables_initializer())
 
             # Training starts here
             train_batches = data_utils.batch_iter(x_train, y_train, params['batch_size'],
@@ -171,14 +184,14 @@ def train_cnn():
 
                 """Step 6.1: evaluate the model with x_dev and y_dev (batch by batch)"""
                 if current_step % params['evaluate_every'] == 0:
-                    # dev_batches = data_utils.batch_iter(list(zip(x_dev, y_dev)), params['batch_size'], 1)
-                    # total_dev_correct = 0
-                    # for dev_batch in dev_batches:
-                    #    x_dev_batch, y_dev_batch = zip(*dev_batch)
-                    #    num_dev_correct = dev_step(x_dev_batch, y_dev_batch)
-                    #    total_dev_correct += num_dev_correct
+                    dev_batches = data_utils.batch_iter(x_dev, y_dev, params['dev_batch_size'], 1)
+                    total_dev_correct = 0
+                    for dev_batch in dev_batches:
+                        x_dev_batch, y_dev_batch = zip(*dev_batch)
+                        num_dev_correct = dev_step(x_dev_batch, y_dev_batch)
+                        total_dev_correct += num_dev_correct
 
-                    total_dev_correct = dev_step(x_dev, y_dev)
+                    #total_dev_correct = dev_step(x_dev, y_dev)
 
                     dev_accuracy = float(total_dev_correct) / len(y_dev)
                     logger.info('Accuracy on dev set: {}'.format(dev_accuracy))
@@ -208,3 +221,4 @@ def train_cnn():
 
 if __name__ == '__main__':
     train_cnn()
+

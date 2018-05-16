@@ -48,8 +48,8 @@ def load_tagged_data(filename, desc_col, alphabet, char_seq_length, ispickle=Tru
     logging.info("converting to int")
     x_raw = [string_to_int8_conversion(x, alphabet_to_int) for x in x_raw]
 
-    logging.info("converting character sequences to one-hot vectors for cnn input")
-    x_raw = [get_one_hot(x, alphabet, char_seq_length) for x in x_raw]
+    #logging.info("converting character sequences to one-hot vectors for cnn input")
+    #x_raw = [get_one_hot(x, alphabet, char_seq_length) for x in x_raw]
 
     logging.info("data loading complete")
     return x_raw, y_raw, labels
@@ -66,7 +66,7 @@ def pad_sentence(char_seq, char_seq_length, padding_char=" "):
 
 
 def string_to_int8_conversion(char_seq, alphabet_to_int):
-    x = np.array([alphabet_to_int.get(char, -1) for char in char_seq], dtype=np.int8)
+    x = np.array([alphabet_to_int.get(char, len(alphabet_to_int)) for char in char_seq], dtype=np.int8)
     return x
 
 
@@ -102,3 +102,16 @@ def batch_iter(x, y, batch_size, num_epochs, shuffle=True):
             x_batch, y_batch = x_shuffled[start_index:end_index], y_shuffled[start_index:end_index]
             batch = list(zip(x_batch, y_batch))
             yield batch
+            
+def batch_iter_test(x, batch_size):
+    """
+    Generates a batch iterator for a test dataset.
+    """
+    data_size = len(x)
+    num_batches_per_epoch = int(data_size/batch_size) + 1
+    
+    for batch_num in range(num_batches_per_epoch):
+        start_index = batch_num * batch_size
+        end_index = min((batch_num + 1) * batch_size, data_size)
+        x_batch = x[start_index:end_index]
+        yield x_batch
